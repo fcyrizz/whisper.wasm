@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whisper.cpp WASM Transcription</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #output {
+            width: 100%;
+            height: 150px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Whisper.cpp WASM Transcription</h1>
+    <p>This script automatically transcribes the audio file using the quantized tiny.en (Q5_1) model.</p>
+
+    <div>
+        <label for="model">Model:</label>
+        <select id="model" disabled>
+            <option value="tiny.en-q5_1">tiny.en (Q5_1)</option>
+        </select>
+    </div>
+
+    <div>
+        <label for="audioFile">Audio File:</label>
+        <input type="text" id="audioFile" value="https://ik.imagekit.io/fcy/output.wav" readonly>
+    </div>
+
+    <button id="transcribeButton" style="display: none;">Transcribe</button>
+
+    <textarea id="output" placeholder="Transcription will appear here..."></textarea>
+
+    <script>
+        // Load the WASM module and initialize Whisper
+        async function loadWhisper() {
+            const Module = await import('https://github.com/ggerganov/whisper.cpp/tree/master/examples/whisper.wasm'); // Adjust the path to your WASM file
+            const whisper = Module.whisper;
+
+            // Load the quantized tiny.en (Q5_1) model
+            const modelPath = 'https://whisper.ggerganov.com/ggml-model-whisper-tiny.en-q5_1.bin'; // Ensure this file is accessible
+            const model = await whisper.loadModel(modelPath);
+
+            // Load the audio file
+            const audioFilePath = document.getElementById('audioFile').value;
+            const audioBuffer = await fetch(audioFilePath)
+                .then(response => response.arrayBuffer())
+                .then(buffer => new Uint8Array(buffer));
+
+            // Start transcription
+            const startTime = performance.now();
+            const transcription = await whisper.transcribe(model, audioBuffer);
+            const endTime = performance.now();
+
+            // Display the transcription result
+            const output = document.getElementById('output');
+            output.value = `Transcription:\n${transcription.text}\n\nTime taken: ${(endTime - startTime).toFixed(2)} ms`;
+        }
+
+        // Automatically start the transcription process
+        window.onload = () => {
+            document.getElementById('transcribeButton').click();
+        };
+
+        // Simulate button click to start transcription
+        document.getElementById('transcribeButton').addEventListener('click', loadWhisper);
+    </script>
+</body>
+</html>
